@@ -1,0 +1,62 @@
+#!/bin/bash
+
+# cue2txt, frank.breitling (@) gmx.de, 2024
+
+# Version 1.0
+
+# DESCRIPTION: Convert cue files from rekordbox to text files
+
+# USAGE: cue2txt file.cue
+
+
+usage() {
+    cat <<EOF
+
+USAGE: $0 file.cue
+
+OPTIONS:
+   -h --help
+   -s --short           short format
+EOF
+    exit
+}
+
+
+SHORTFORMAT=false
+
+TEMP=`getopt -o hs --long help,short -- "$@"`
+
+eval set -- "$TEMP"
+
+while true; do
+    case "$1" in
+        -h|--help)         usage; shift ;;
+        -s|--short)        SHORTFORMAT=true; shift;;
+        --) shift ;        break ;;
+        *) echo "Internal error!"; exit 1 ;;
+    esac
+done
+
+
+CUEFILE=$1
+echo $CUEFILE |grep -q cue || usage
+TXTFILE="${1%.cue}.txt"
+
+TASK=`basename $0`
+echo "$TASK $OPTIONS $CUEFILE"
+
+
+default_format() {
+    # Default format: TRACK NO. - TIME - TITLE
+
+    tail -n +5 "$CUEFILE" |grep "TRACK\|TITLE\|INDEX" |sed -e 's/TITLE\|INDEX 01\|TRACK//; s/ AUDIO/./; s/^[ \t]*//; s/\"//g; s/\r$//' |sed -n 'p;n;h;n;p;g;p' |paste -d " "  - - - >"$TXTFILE"
+}
+
+short_format() {
+# Short format: TRACK NO. - TITLE
+
+    tail -n +5 "$CUEFILE" |grep "TRACK\|TITLE" |sed -e 's/TRACK\|TITLE//; s/ AUDIO/./; s/^[ \t]*//; s/\"//g; s/\r$//' |paste -d " "  - - >"$TXTFILE"
+}
+
+
+if $SHORTFORMAT; then short_format; else default_format; fi
