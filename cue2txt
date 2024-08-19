@@ -54,7 +54,7 @@ echo "$TASK $OPTIONS $CUEFILE"
 tail -n +5 "$CUEFILE" |grep "INDEX\|TRACK\|TITLE\|PERFORMER" |sed -e 's/TRACK\|TITLE\|INDEX 01\|PERFORMER//; s/ AUDIO/./; s/^[ \t]*//; s/\"//g; s/\r$//' | while
     IFS= read -r line1 && IFS= read -r line2 && IFS= read -r line3 && IFS= read -r line4; do
     echo -e "$line1 ${TIME:+$line4 }${ARTIST:+$line3 - }$line2"
-done #>"$TXTFILE"
+done >"$TXTFILE"
     
         
 # Default format: TRACK# TIME TITLE
