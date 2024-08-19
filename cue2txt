@@ -16,22 +16,25 @@ USAGE: $0 file.cue
 
 OPTIONS:
    -h --help
-   -s --short           short format
+   -a --artist         no artist information
+   -t --time           no time information
 EOF
     exit
 }
 
 
-SHORTFORMAT=false
+ARTIST=true
+TIME=true
 
-TEMP=`getopt -o hs --long help,short -- "$@"`
+TEMP=`getopt -o aht --long artist,help,time -- "$@"`
 
 eval set -- "$TEMP"
 
 while true; do
     case "$1" in
+        -a|--artist)       ARTIST=false; shift;;
         -h|--help)         usage; shift ;;
-        -s|--short)        SHORTFORMAT=true; shift;;
+        -t|--time)         TIME=false; shift;;
         --) shift ;        break ;;
         *) echo "Internal error!"; exit 1 ;;
     esac
@@ -46,17 +49,20 @@ TASK=`basename $0`
 echo "$TASK $OPTIONS $CUEFILE"
 
 
-default_format() {
-    # Default format: TRACK NO. - TIME - TITLE
+# Default format: TRACK# TIME ARTIST - TITLE
 
-    tail -n +5 "$CUEFILE" |grep "TRACK\|TITLE\|INDEX" |sed -e 's/TITLE\|INDEX 01\|TRACK//; s/ AUDIO/./; s/^[ \t]*//; s/\"//g; s/\r$//' |sed -n 'p;n;h;n;p;g;p' |paste -d " "  - - - >"$TXTFILE"
-}
+tail -n +5 "$CUEFILE" |grep "INDEX\|TRACK\|TITLE\|PERFORMER" |sed -e 's/TRACK\|TITLE\|INDEX 01\|PERFORMER//; s/ AUDIO/./; s/^[ \t]*//; s/\"//g; s/\r$//' | while
+    IFS= read -r line1 && IFS= read -r line2 && IFS= read -r line3 && IFS= read -r line4; do
+    if ! $ARTIST; then line3='\b'; else line3="$line3 -"; fi
+    if ! $TIME; then line4='\b'; fi
+    echo -e "$line1 $line4 $line3 $line2"
+done >"$TXTFILE"
+    
+        
+# Default format: TRACK# TIME TITLE
 
-short_format() {
-# Short format: TRACK NO. - TITLE
+#tail -n +5 "$CUEFILE" |grep "TRACK\|TITLE\|INDEX" |sed -e 's/TITLE\|INDEX 01\|TRACK//; s/ AUDIO/./; s/^[ \t]*//; s/\"//g; s/\r$//' |sed -n 'p;n;h;n;p;g;p' |paste -d " "  - - - >"$TXTFILE"
 
-    tail -n +5 "$CUEFILE" |grep "TRACK\|TITLE" |sed -e 's/TRACK\|TITLE//; s/ AUDIO/./; s/^[ \t]*//; s/\"//g; s/\r$//' |paste -d " "  - - >"$TXTFILE"
-}
+# Short format: TRACK# - TITLE
 
-
-if $SHORTFORMAT; then short_format; else default_format; fi
+#tail -n +5 "$CUEFILE" |grep "TRACK\|TITLE" |sed -e 's/TRACK\|TITLE//; s/ AUDIO/./; s/^[ \t]*//; s/\"//g; s/\r$//' |paste -d " "  - - >"$TXTFILE"
